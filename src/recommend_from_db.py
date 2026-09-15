@@ -5,7 +5,7 @@
 
 import psycopg
 from psycopg.rows import dict_row
-from scoring_engine import recommend_products
+from src.scoring_engine import recommend_products
 
 DB_CONNECTION = "dbname=fashionai"
 
