@@ -1,5 +1,9 @@
 -- schema.sql
 -- Defines the structure of our products table.
+-- NOTE: pgvector's CREATE EXTENSION must run once per database,
+-- before any table uses the "vector" type.
+
+CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE products (
     id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -16,5 +20,6 @@ CREATE TABLE products (
     image_url       TEXT,
     availability    TEXT NOT NULL DEFAULT 'in_stock',
     style_tags      TEXT[],
+    embedding       VECTOR(384),
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
