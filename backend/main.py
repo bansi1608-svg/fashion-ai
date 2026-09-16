@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from src.semantic_search import semantic_search
 from src.recommend_from_db import fetch_all_products
 from src.scoring_engine import recommend_products
 from src.query_parser import parse_query
@@ -74,3 +75,12 @@ def search(request: SearchRequest):
     )
 
     return {"parsed_query": parsed, "results": results}
+
+class SemanticSearchRequest(BaseModel):
+    query: str
+    limit: int = 5
+
+
+@app.post("/semantic-search")
+def semantic_search_endpoint(request: SemanticSearchRequest):
+    return semantic_search(request.query, limit=request.limit)
