@@ -1,5 +1,10 @@
 # backend/main.py
 
+import io
+from fastapi import UploadFile, File
+from PIL import Image
+from src.visual_search import visual_search
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -84,3 +89,13 @@ class SemanticSearchRequest(BaseModel):
 @app.post("/semantic-search")
 def semantic_search_endpoint(request: SemanticSearchRequest):
     return semantic_search(request.query, limit=request.limit)
+
+@app.post("/visual-search")
+async def visual_search_endpoint(file: UploadFile = File(...), limit: int = 5):
+    """
+    Accepts an uploaded image, embeds it with CLIP, and returns the
+    most visually similar real products from our catalogue.
+    """
+    contents = await file.read()
+    image = Image.open(io.BytesIO(contents)).convert("RGB")
+    return visual_search(image, limit=limit)
