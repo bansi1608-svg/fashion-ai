@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import ProductCard from "./components/ProductCard";
+import { logInteraction } from "./lib/interactions";
+
 
 const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -41,6 +43,10 @@ export default function Home() {
       });
   }, []);
 
+  function handleShopClick(productId) {
+  logInteraction({ interactionType: "click", productId });
+}
+
   function handleSearchSubmit(e) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -61,6 +67,12 @@ export default function Home() {
         setSearchResults(data.results);
         setParsedQuery(data.parsed_query);
         setSearchLoading(false);
+        logInteraction({
+          interactionType: "search",
+          style: data.parsed_query.style,
+          colour: data.parsed_query.colour,
+          category: data.parsed_query.category,
+        });
       })
       .catch((err) => {
         setSearchError(err.message);
@@ -107,6 +119,7 @@ export default function Home() {
       .then((data) => {
         setVisualResults(data);
         setVisualLoading(false);
+        logInteraction({ interactionType: "visual_search" });
       })
       .catch((err) => {
         setVisualError(err.message);
@@ -198,7 +211,7 @@ export default function Home() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {visualResults.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} onShopClick={handleShopClick} />
               ))}
             </div>
           </div>

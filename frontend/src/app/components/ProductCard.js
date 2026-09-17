@@ -1,10 +1,6 @@
 // frontend/src/app/components/ProductCard.js
-//
-// One product card, reused wherever we display product results -
-// the full catalogue grid, text search results, and visual search
-// results all use this same component now.
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, onShopClick }) {
   return (
     <div className="border rounded-lg p-4 shadow-sm">
       {"match_score" in product && (
@@ -27,6 +23,7 @@ export default function ProductCard({ product }) {
         href={product.product_url}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => onShopClick && onShopClick(product.id)}
         className="inline-block mt-3 text-sm underline"
       >
         Shop Now →

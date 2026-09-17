@@ -29,3 +29,18 @@ CREATE TABLE products (
     image_embedding  VECTOR(512),
     created_at       TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+
+-- Anonymous interaction history, used for personalization (Milestone 13).
+-- session_id identifies a browser, not a logged-in user - see project
+-- notes: full user accounts are a deliberate LATER/ADVANCED feature.
+CREATE TABLE user_interactions (
+    id                INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    session_id        TEXT NOT NULL,
+    interaction_type  TEXT NOT NULL,  -- 'search' or 'click'
+    style             TEXT,
+    colour            TEXT,
+    category          TEXT,
+    product_id        INTEGER REFERENCES products(id),
+    created_at        TIMESTAMP NOT NULL DEFAULT NOW()
+);

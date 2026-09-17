@@ -5,6 +5,9 @@ from fastapi import UploadFile, File
 from PIL import Image
 from src.visual_search import visual_search
 
+from typing import Optional
+from src.interactions import log_interaction
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -99,3 +102,24 @@ async def visual_search_endpoint(file: UploadFile = File(...), limit: int = 5):
     contents = await file.read()
     image = Image.open(io.BytesIO(contents)).convert("RGB")
     return visual_search(image, limit=limit)
+
+class InteractionRequest(BaseModel):
+    session_id: str
+    interaction_type: str
+    style: Optional[str] = None
+    colour: Optional[str] = None
+    category: Optional[str] = None
+    product_id: Optional[int] = None
+
+
+@app.post("/interactions")
+def record_interaction(request: InteractionRequest):
+    log_interaction(
+        session_id=request.session_id,
+        interaction_type=request.interaction_type,
+        style=request.style,
+        colour=request.colour,
+        category=request.category,
+        product_id=request.product_id,
+    )
+    return {"status": "logged"}
