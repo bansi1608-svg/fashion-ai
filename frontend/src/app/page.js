@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import ProductCard from "./components/ProductCard";
 import { logInteraction } from "./lib/interactions";
+import { getSessionId } from "./lib/session";
 
 
 const API_BASE_URL = "http://127.0.0.1:8000";
@@ -26,6 +27,10 @@ export default function Home() {
   const [visualResults, setVisualResults] = useState(null);
   const [visualLoading, setVisualLoading] = useState(false);
   const [visualError, setVisualError] = useState(null);
+
+  const [appliedQuery, setAppliedQuery] = useState(null);
+  const [personalizationUsed, setPersonalizationUsed] = useState(false);
+
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/products`)
@@ -57,7 +62,7 @@ export default function Home() {
     fetch(`${API_BASE_URL}/search`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: searchQuery }),
+      body: JSON.stringify({ query: searchQuery, session_id: getSessionId() }),
     })
       .then((response) => {
         if (!response.ok) throw new Error("Search failed");
@@ -73,6 +78,19 @@ export default function Home() {
           colour: data.parsed_query.colour,
           category: data.parsed_query.category,
         });
+      })
+        .then((data) => {
+          setSearchResults(data.results);
+          setParsedQuery(data.parsed_query);
+          setAppliedQuery(data.applied_query);
+          setPersonalizationUsed(data.personalization_used);
+          logInteraction({
+              interactionType: "search",
+              style: data.parsed_query.style,
+              colour: data.parsed_query.colour,
+              category: data.parsed_query.category,
+            });
+        setSearchLoading(false);
       })
       .catch((err) => {
         setSearchError(err.message);
@@ -172,13 +190,22 @@ export default function Home() {
       {searchLoading && <p className="mb-4">Searching...</p>}
       {searchError && <p className="mb-4 text-red-600">{searchError}</p>}
 
-      {parsedQuery && (
+            {parsedQuery && (
         <div className="mb-8 text-sm bg-gray-100 rounded px-4 py-3">
-          <span className="font-semibold">Understood:</span> style:{" "}
-          {parsedQuery.style ?? "not detected"} · colour:{" "}
-          {parsedQuery.colour ?? "not detected"} · category:{" "}
-          {parsedQuery.category ?? "not detected"} · budget:{" "}
-          {parsedQuery.budget !== null ? `₹${parsedQuery.budget}` : "no limit specified"}
+          <div>
+            <span className="font-semibold">Understood:</span> style:{" "}
+            {parsedQuery.style ?? "not detected"} · colour:{" "}
+            {parsedQuery.colour ?? "not detected"} · category:{" "}
+            {parsedQuery.category ?? "not detected"} · budget:{" "}
+            {parsedQuery.budget !== null ? `₹${parsedQuery.budget}` : "no limit specified"}
+          </div>
+          {personalizationUsed && appliedQuery && (
+            <div className="mt-2 text-indigo-700">
+              Personalized using your past searches — applied style:{" "}
+              {appliedQuery.style ?? "—"}, colour: {appliedQuery.colour ?? "—"}, category:{" "}
+              {appliedQuery.category ?? "—"}
+            </div>
+          )}
         </div>
       )}
 

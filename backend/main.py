@@ -5,6 +5,8 @@ from fastapi import UploadFile, File
 from PIL import Image
 from src.visual_search import visual_search
 
+from src.personalization import get_user_preferences
+
 from typing import Optional
 from src.interactions import log_interaction
 
@@ -59,30 +61,50 @@ def recommend(request: RecommendRequest):
 
 class SearchRequest(BaseModel):
     query: str
+    session_id: Optional[str] = None
 
 
 @app.post("/search")
 def search(request: SearchRequest):
     """
-    Accepts a single free-text query (e.g. "baddie outfit under ₹2500"),
-    parses it into structured criteria, and returns ranked results -
-    plus what we understood from the query, for transparency.
+    Parses the query, then fills in any UNDETECTED fields using the
+    session's past preferences (if there's enough history) - never
+    overriding anything the user actually typed.
     """
     catalogue = fetch_all_products()
     parsed = parse_query(request.query, catalogue)
 
-    # No budget mentioned in the query = no budget constraint
+    preferences = get_user_preferences(request.session_id)
+
+    applied_style = parsed["style"] or preferences.get("style")
+    applied_colour = parsed["colour"] or preferences.get("colour")
+    applied_category = parsed["category"] or preferences.get("category")
     budget = parsed["budget"] if parsed["budget"] is not None else float("inf")
+
+    personalization_used = (
+        applied_style != parsed["style"]
+        or applied_colour != parsed["colour"]
+        or applied_category != parsed["category"]
+    )
 
     results = recommend_products(
         catalogue=catalogue,
-        style=parsed["style"],
-        colour=parsed["colour"],
-        category=parsed["category"],
+        style=applied_style,
+        colour=applied_colour,
+        category=applied_category,
         budget=budget,
     )
 
-    return {"parsed_query": parsed, "results": results}
+    return {
+        "parsed_query": parsed,
+        "applied_query": {
+            "style": applied_style,
+            "colour": applied_colour,
+            "category": applied_category,
+        },
+        "personalization_used": personalization_used,
+        "results": results,
+    }
 
 class SemanticSearchRequest(BaseModel):
     query: str
